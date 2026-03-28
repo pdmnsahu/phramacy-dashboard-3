@@ -19,8 +19,9 @@ router.get('/', (_req, res) => {
 
     const todaySales = db.prepare("SELECT COALESCE(SUM(sale_price),0) AS revenue, COALESCE(SUM(profit),0) AS profit, COUNT(*) AS count FROM sales WHERE sale_date=?").get(today);
     const weekSales = db.prepare("SELECT COALESCE(SUM(sale_price),0) AS revenue, COALESCE(SUM(profit),0) AS profit FROM sales WHERE sale_date >= ? AND sale_date <= ?").get(wStart, today);
-    const monthSales = db.prepare("SELECT COALESCE(SUM(sale_price),0) AS revenue, COALESCE(SUM(profit),0) AS profit FROM sales WHERE sale_date>=?").get(mStart);
-
+    const monthSales = db.prepare(
+  "SELECT COALESCE(SUM(sale_price),0) AS revenue, COALESCE(SUM(profit),0) AS profit FROM sales WHERE sale_date >= ? AND sale_date <= ?"
+).get(mStart, today);
     const totalPurchaseCost = db.prepare('SELECT COALESCE(SUM(cost_price*units_purchased),0) AS c FROM purchases').get().c;
     const totalSaleRevenue  = db.prepare('SELECT COALESCE(SUM(sale_price),0) AS c FROM sales').get().c;
 
