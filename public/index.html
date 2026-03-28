@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PharmaStore</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">💊</div>
+    <div class="logo-text">Pharma<span>Store</span></div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section-title">Overview</div>
+    <button class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+      <span class="nav-icon">📊</span> Dashboard
+    </button>
+    <div class="nav-section-title">Master Data</div>
+    <button class="nav-item" data-page="manufacturers" onclick="navigate('manufacturers')">
+      <span class="nav-icon">🏭</span> Manufacturers
+    </button>
+    <button class="nav-item" data-page="medicines" onclick="navigate('medicines')">
+      <span class="nav-icon">💉</span> Medicines
+    </button>
+    <div class="nav-section-title">Transactions</div>
+    <button class="nav-item" data-page="purchases" onclick="navigate('purchases')">
+      <span class="nav-icon">🛒</span> Purchases
+    </button>
+    <button class="nav-item" data-page="sales" onclick="navigate('sales')">
+      <span class="nav-icon">💰</span> Sales
+    </button>
+    <div class="nav-section-title">Inventory</div>
+    <button class="nav-item" data-page="batches" onclick="navigate('batches')">
+      <span class="nav-icon">📦</span> Batch Stock
+    </button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <button onclick="document.getElementById('sidebar').classList.toggle('mobile-open')" id="mobileMenuBtn"
+      style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;display:none">☰</button>
+    <div class="topbar-title" id="pageTitle">Dashboard</div>
+    <div class="topbar-date" id="topbarDate"></div>
+    <div class="user-badge">👤 Admin</div>
+  </div>
+
+  <div class="content">
+
+    <!-- ===== DASHBOARD ===== -->
+    <div class="page active" id="page-dashboard">
+      <div class="stat-grid">
+        <div class="stat-card info">   <div class="stat-label">Medicines</div>      <div class="stat-value" id="d-medicines">—</div></div>
+        <div class="stat-card">        <div class="stat-label">Manufacturers</div>  <div class="stat-value" id="d-mfrs">—</div></div>
+        <div class="stat-card">        <div class="stat-label">Total Stock</div>    <div class="stat-value" id="d-stock">—</div><div class="stat-sub">units remaining</div></div>
+        <div class="stat-card warning"><div class="stat-label">Near Expiry</div>    <div class="stat-value" id="d-near">—</div><div class="stat-sub">within 30 days</div></div>
+        <div class="stat-card danger"> <div class="stat-label">Expired</div>        <div class="stat-value" id="d-expired">—</div><div class="stat-sub">batches w/ stock</div></div>
+        <div class="stat-card danger"> <div class="stat-label">Out of Stock</div>   <div class="stat-value" id="d-out">—</div><div class="stat-sub">depleted batches</div></div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card success"><div class="stat-label">Today Revenue</div>  <div class="stat-value font-mono" id="d-today-rev">—</div><div class="stat-sub" id="d-today-count">— sales</div></div>
+        <div class="stat-card success"><div class="stat-label">Today Profit</div>   <div class="stat-value font-mono" id="d-today-profit">—</div></div>
+        <div class="stat-card">        <div class="stat-label">Week Revenue</div>   <div class="stat-value font-mono" id="d-week-rev">—</div></div>
+        <div class="stat-card">        <div class="stat-label">Week Profit</div>    <div class="stat-value font-mono" id="d-week-profit">—</div></div>
+        <div class="stat-card">        <div class="stat-label">Month Revenue</div>  <div class="stat-value font-mono" id="d-month-rev">—</div></div>
+        <div class="stat-card">        <div class="stat-label">Month Profit</div>   <div class="stat-value font-mono" id="d-month-profit">—</div></div>
+      </div>
+      <div class="grid-2 mb-16">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Revenue Trend (7 days)</div></div>
+          <div class="panel-body"><div class="chart-container"><canvas id="revenueChart"></canvas></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Profit Trend (7 days)</div></div>
+          <div class="panel-body"><div class="chart-container"><canvas id="profitChart"></canvas></div></div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">🏆 Top Medicines</div>
+            <span style="font-size:11px;color:var(--muted)">by units sold (all time)</span>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>#</th><th>Medicine</th><th>Units Sold</th><th class="text-right">Revenue</th></tr></thead>
+            <tbody id="d-top-meds"></tbody></table>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">🕒 Recent Sales</div>
+            <button class="btn btn-sm btn-outline" onclick="navigate('sales')">View All</button>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Medicine</th><th>Batch</th><th>Units</th><th class="text-right">Revenue</th></tr></thead>
+            <tbody id="d-recent-sales"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MANUFACTURERS ===== -->
+    <div class="page" id="page-manufacturers">
+      <div class="toolbar">
+        <div class="search-bar" style="flex:1;max-width:300px">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="mfr-search" placeholder="Search manufacturers…" oninput="renderManufacturers()">
+        </div>
+        <div class="toolbar-right">
+          <button class="btn btn-primary" onclick="openMfrModal()">+ Add Manufacturer</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Manufacturers (<span id="mfr-count">0</span>)</div>
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>#</th><th>Name</th><th>Contact</th><th>Email</th><th>Address</th><th>Actions</th></tr></thead>
+          <tbody id="mfr-table"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MEDICINES ===== -->
+    <div class="page" id="page-medicines">
+      <div class="toolbar">
+        <div class="search-bar" style="flex:1;max-width:300px">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="med-search" placeholder="Search medicines…" oninput="renderMedicines()">
+        </div>
+        <div class="toolbar-right">
+          <button class="btn btn-primary" onclick="openMedModal()">+ Add Medicine</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Medicines (<span id="med-count">0</span>)</div>
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>#</th><th>Name</th><th>Manufacturer</th><th>Category</th><th>Description</th><th>Actions</th></tr></thead>
+          <tbody id="med-table"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PURCHASES ===== -->
+    <div class="page" id="page-purchases">
+      <div class="toolbar">
+        <div class="search-bar" style="flex:1;max-width:300px">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="pur-search" placeholder="Search by medicine, batch…" oninput="renderPurchases()">
+        </div>
+        <div class="toolbar-right">
+          <button class="btn btn-primary" onclick="openPurchaseModal()">+ Record Purchase</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Purchase Records (<span id="pur-count">0</span>)</div>
+          <div style="font-size:12px;color:var(--muted)">Total Invested: <strong class="text-teal" id="pur-total-val">₹0</strong></div>
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>#</th><th>Medicine</th><th>Manufacturer</th><th>Batch</th><th>Units</th><th>Cost/Unit</th><th>MRP/Unit</th><th>Total Cost</th><th>Expiry</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="pur-table"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SALES ===== -->
+    <div class="page" id="page-sales">
+      <div class="toolbar">
+        <div class="search-bar" style="flex:1;max-width:300px">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="sale-search" placeholder="Search by medicine, batch…" oninput="renderSales()">
+        </div>
+        <div class="toolbar-right">
+          <button class="btn btn-success" onclick="openSaleModal()">+ Record Sale</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Sales Records (<span id="sale-count">0</span>)</div>
+          <div class="flex gap-8" style="font-size:12px;color:var(--muted)">
+            Revenue: <strong class="text-teal" id="sale-total-val">₹0</strong>
+            &nbsp;| Profit: <strong class="text-success" id="sale-profit-val">₹0</strong>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>#</th><th>Medicine</th><th>Manufacturer</th><th>Batch</th><th>Units Sold</th><th>Revenue</th><th>Cost</th><th>Profit</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="sale-table"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== BATCH STOCK ===== -->
+    <div class="page" id="page-batches">
+      <div class="toolbar">
+        <div class="search-bar" style="flex:1;max-width:300px">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="batch-search" placeholder="Search batches…" oninput="renderBatches()">
+        </div>
+        <select id="batch-filter" onchange="renderBatches()" style="width:auto">
+          <option value="all">All Batches</option>
+          <option value="active">In Stock</option>
+          <option value="expired">Expired (w/ stock)</option>
+          <option value="near">Near Expiry</option>
+          <option value="out">Out of Stock</option>
+        </select>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Batch Stock (<span id="batch-count">0</span>)</div>
+          <div style="font-size:12px;color:var(--muted)">Stock Value (at cost): <strong class="text-teal" id="batch-val">₹0</strong></div>
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>#</th><th>Medicine</th><th>Manufacturer</th><th>Batch #</th><th>Purchased</th><th>Remaining</th><th>Sold</th><th>Cost/Unit</th><th>MRP/Unit</th><th>Expiry</th><th>Status</th></tr></thead>
+          <tbody id="batch-table"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== MANUFACTURER MODAL ===== -->
+<div class="modal-overlay" id="mfr-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="mfr-modal-title">Add Manufacturer</div>
+      <button class="modal-close" onclick="closeModal('mfr-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mfr-id">
+      <div class="form-grid">
+        <div class="form-group full"><label>Name *</label><input id="mfr-name" placeholder="e.g. Sun Pharma"></div>
+        <div class="form-group"><label>Contact</label><input id="mfr-contact" placeholder="Phone number"></div>
+        <div class="form-group"><label>Email</label><input id="mfr-email" type="email" placeholder="email@example.com"></div>
+        <div class="form-group full"><label>Address</label><input id="mfr-address" placeholder="Office address"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('mfr-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMfr()">Save Manufacturer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MEDICINE MODAL ===== -->
+<div class="modal-overlay" id="med-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="med-modal-title">Add Medicine</div>
+      <button class="modal-close" onclick="closeModal('med-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="info-box">ℹ️ This stores medicine master data. To add stock, record a <strong>Purchase</strong> which creates a batch with expiry, cost and quantity.</div>
+      <input type="hidden" id="med-id">
+      <div class="form-grid">
+        <div class="form-group full"><label>Medicine Name *</label><input id="med-name" placeholder="e.g. Paracetamol 500mg"></div>
+        <div class="form-group full">
+          <label>Manufacturer *</label>
+          <select id="med-manufacturer"><option value="">Select manufacturer…</option></select>
+        </div>
+        <div class="form-group"><label>Category</label><input id="med-category" placeholder="e.g. Analgesic"></div>
+        <div class="form-group full"><label>Description</label><input id="med-desc" placeholder="Optional description"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('med-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMed()">Save Medicine</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PURCHASE MODAL ===== -->
+<div class="modal-overlay" id="pur-modal">
+  <div class="modal wide">
+    <div class="modal-header">
+      <div class="modal-title" id="pur-modal-title">Record Purchase</div>
+      <button class="modal-close" onclick="closeModal('pur-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pur-id">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Medicine *</label>
+          <select id="pur-medicine"><option value="">Select medicine…</option></select>
+        </div>
+        <div class="form-group"><label>Batch Number *</label><input id="pur-batch" placeholder="e.g. BT-2024-001"></div>
+        <div class="form-group"><label>Expiry Date *</label><input id="pur-expiry" type="date"></div>
+        <div class="form-group"><label>Purchase Date</label><input id="pur-date" type="date"></div>
+        <div class="form-group"><label>Units Purchased *</label><input id="pur-units" type="number" min="1" placeholder="e.g. 100" oninput="calcPurchaseTotal()"></div>
+        <div class="form-group"><label>Cost Price / Unit ₹ *</label><input id="pur-cost" type="number" min="0" step="0.01" placeholder="e.g. 8.50" oninput="calcPurchaseTotal()"></div>
+        <div class="form-group"><label>MRP / Unit ₹ *</label><input id="pur-mrp" type="number" min="0" step="0.01" placeholder="e.g. 15.00"></div>
+        <div class="form-group"><label>Total Cost</label><input id="pur-total" readonly placeholder="Auto-calculated" style="opacity:0.6;background:var(--bg)"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('pur-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePurchase()">Save Purchase</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SALE MODAL ===== -->
+<div class="modal-overlay" id="sale-modal">
+  <div class="modal wide">
+    <div class="modal-header">
+      <div class="modal-title" id="sale-modal-title">Record Sale</div>
+      <button class="modal-close" onclick="closeModal('sale-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="sale-id">
+      <div class="info-box">ℹ️ Batches are sorted by <strong>earliest expiry first (FEFO)</strong>. The default selection is the batch closest to expiry.</div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Medicine *</label>
+          <select id="sale-medicine" onchange="onSaleMedicineChange()"><option value="">Select medicine…</option></select>
+        </div>
+        <div class="form-group full">
+          <label>Batch * <span style="color:var(--muted);font-size:11px;text-transform:none;font-weight:400">(earliest expiry pre-selected)</span></label>
+          <select id="sale-batch" onchange="onSaleBatchChange()"><option value="">Select medicine first…</option></select>
+        </div>
+      </div>
+
+      <div class="batch-info-box" id="sale-batch-info">
+        <div class="batch-info-grid">
+          <div class="batch-info-item"><span class="lbl">Batch Number</span><span class="val" id="bi-batch">—</span></div>
+          <div class="batch-info-item"><span class="lbl">Units Available</span><span class="val" id="bi-avail">—</span></div>
+          <div class="batch-info-item"><span class="lbl">MRP / Unit</span><span class="val" id="bi-mrp">—</span></div>
+          <div class="batch-info-item"><span class="lbl">Expiry Date</span><span class="val" id="bi-expiry">—</span></div>
+        </div>
+      </div>
+
+      <div class="form-grid mt-16">
+        <div class="form-group"><label>Units to Sell *</label><input id="sale-units" type="number" min="1" placeholder="Enter quantity" oninput="calcSaleTotal()"></div>
+        <div class="form-group"><label>Sale Date</label><input id="sale-date" type="date"></div>
+        <div class="form-group"><label>Total Revenue</label><input id="sale-revenue" readonly placeholder="Auto-calculated" style="opacity:0.6;background:var(--bg)"></div>
+        <div class="form-group"><label>Estimated Profit</label><input id="sale-profit-calc" readonly placeholder="Auto-calculated" style="opacity:0.6;background:var(--bg)"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('sale-modal')">Cancel</button>
+      <button class="btn btn-success" onclick="saveSale()">Record Sale</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CONFIRM MODAL ===== -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-body" style="padding:32px 24px 24px">
+      <div class="confirm-icon" id="confirm-icon">⚠️</div>
+      <div class="confirm-msg"  id="confirm-msg">Are you sure?</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('confirm-modal')">Cancel</button>
+      <button class="btn btn-danger"  id="confirm-ok-btn" onclick="execConfirm()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="alert" id="toastEl">
+  <span class="alert-icon" id="toastIcon">✅</span>
+  <span id="toastMsg">—</span>
+</div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
